@@ -1,0 +1,33 @@
+name: Radar diario
+
+on:
+  schedule:
+    # 9:48 UTC = 6:48 en Buenos Aires (UTC-3, sin horario de verano).
+    # GitHub puede demorar unos minutos en arrancar las tareas programadas.
+    - cron: "48 9 * * *"
+  workflow_dispatch: {}   # botón "Run workflow" para correrlo a mano
+
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: python radar.py
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: radar-html
+          path: salida/
+          retention-days: 30
